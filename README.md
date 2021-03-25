@@ -36,7 +36,7 @@ A continuación se detallan los pasos a seguir, primero se obtienen las URL que 
 
 ### Entrenamiento del modelo
 
-Tras realizar la extracción del texto de varios blogs, se unen todos en un mismo fichero con formato `.mallet`. Éste fichero, contendrá toda la información de la que se quiera extraer los topics, que se realizará a través de la clase TrainModel. Para ello, se introduce el nombre del fichero con formato mallet en la variable `malletFile`, se introducen el número de topics que se desee obtener en `numTopics` y el número de iteraciones en `numIterations` que deba realizar el entrenamiento para obtener el modelo. Éste modelo de entrenamiento está preparado para trabajar con varios idiomas:
+Tras realizar la extracción del texto de varios blogs, se unen todos en un mismo fichero con formato `.mallet`. Éste fichero, contendrá toda la información de la que se quiera extraer los topics, que se realizará a través de la clase TrainModel. Para ello, se introduce el nombre del fichero con formato mallet en la variable `malletFile`, se introducen el número de topics que se desee obtener en `numTopics` y el número de iteraciones en `numIterations` que deba realizar el entrenamiento para obtener el modelo. Por norma general, `numTopics` funciona bien con un número alrededor de 8 y `numIterations` con un número entre 1500 y 2000. Éste modelo de entrenamiento está preparado para trabajar con varios idiomas:
 
 + Alemán (de)
 + Inglés (en)
@@ -61,3 +61,10 @@ Tras éste preprocesado, el modelo de entrenamiento ya está en condiciones de p
 1. Por pantalla imprime un valor: LogLikelihood, que da cuenta de lo preciso que ha podido ser el categorizador, cuanto más cercano a 0 sea el modelo, mejor.
 
 Éstos modelos se generan en la carpeta `models`, en una carpeta que proporciona el número de topis, el número de iteraciones el Llh y la fecha de cada modelo generado: `LDA--topics-NumTopics--iter-NumIteractions--llh-LogLikelihood--date`.
+
+### Comprobación del modelo
+
+Una vez creado el modelo, se procede a comprobar su eficacia:
+
++ Lo más sencillo es comprobar el archivo topWords.txt, y comprobar que las palabras de los topics tengan relación y que no haya topics repetidos o con palabras excesivamente similares. Si no hay relación entre las palabras, se debe cambiar el número de teraciones, mientras que si hay topics repetidos, habría que considerar el número de los mismos.
++ Al mirar el llh, hay que comprobar que no sea excesivamente pequeño comparado con el resto (entendiendo que se han realizado varias pruebas).
