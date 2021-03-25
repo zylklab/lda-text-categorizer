@@ -35,11 +35,11 @@ public class TrainModel {
 	private static InstanceList modelInstances;
 
 	// Set number of topics and the number of iterations to make the model
-	private static Integer numTopics = 7;
-	private static Integer numIterations = 20;
+	private static Integer numTopics;
+	private static Integer numIterations;
 
 	// Set the name of the mallet file
-	private static String malletFile = "patata.mallet";
+	private static String malletFile;
 
 	public static void generateModel(String trainFile, boolean saveEachModel) throws Exception {
 
@@ -125,9 +125,14 @@ public class TrainModel {
 		LocalDateTime now = LocalDateTime.now();
 		DateTimeFormatter dtf = DateTimeFormatter.ofPattern("yyyy-MM-dd--HH:mm");
 		String file = String.format("LDA--topics-%s--iter-%s--%s", numTopics, numIterations, dtf.format(now));
+		
 		File directorio = new File(String.format("./models/LDA--topics-%s--iter-%s--llh-%s--%s", numTopics, numIterations,
 				model.modelLogLikelihood(), dtf.format(now)));
 		try {
+			File models = new File("./models");
+			if (!models.exists()) {
+				models.mkdir();
+			}
 			directorio.mkdir();
 			// printTopWords creates an .txt with the most relevant words per topic
 			Integer wordsPerTopicToPrint = 5;
