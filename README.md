@@ -7,6 +7,8 @@ Para crear el categorizador, se han utilizado las siguientes librerías Open Sou
 + [ixa-pipe-pos](https://github.com/ixa-ehu/ixa-pipe-pos)
 + [ixa-pipe-tok](https://github.com/ixa-ehu/ixa-pipe-tok)
 
+El objetivo de éste proyecto es generar modelos para categorizar textos a partir de los textos recogidos en blogs que estén relacionados por alguna temática en concreto: tecnología, seguros, energía, política, etc.
+
 ## Entrenamiento del modelo
 A continuación se explica cómo se entrena el modelo desde 0:
 
