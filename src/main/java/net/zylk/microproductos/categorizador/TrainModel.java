@@ -4,15 +4,16 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FilenameFilter;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.Reader;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 import java.util.regex.Pattern;
+
+import org.apache.commons.io.FileUtils;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -26,6 +27,8 @@ import cc.mallet.pipe.iterator.CsvIterator;
 import cc.mallet.topics.ParallelTopicModel;
 import cc.mallet.types.InstanceList;
 import net.zylk.microproductos.categorizador.model.LemmatizerPipe;
+import net.zylk.microproductos.categorizador.utils.Constants;
+import net.zylk.microproductos.categorizador.utils.Utils;
 
 public class TrainModel {
 
@@ -34,53 +37,32 @@ public class TrainModel {
 	private static ParallelTopicModel model;
 	private static InstanceList modelInstances;
 
-	// Set number of topics and the number of iterations to make the model
-	private static Integer numTopics;
-	private static Integer numIterations;
-
-	// Set the name of the mallet file
-	private static String malletFile;
-
-	public static void generateModel(String trainFile, boolean saveEachModel) throws Exception {
-
-		List<Double> llh = new ArrayList<Double>();
-		Integer iterations = 1000;
-		List<Integer> topics = new ArrayList<Integer>(
-				Arrays.asList(5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55, 60, 65, 70, 75, 80, 85, 90, 95, 100));
-
-		for (Integer n : topics) {
-			train(trainFile, n, iterations);
-			llh.add(model.modelLogLikelihood());
-			if (saveEachModel) {
-				saveModel(n, iterations);
-			}
-		}
-		List<Integer> maxTopics = new ArrayList<Integer>();
-		Integer maxT = topics.get(llh.indexOf(Collections.max(llh)));
-		maxTopics.add(maxT);
-
-		System.out.println();
-		System.out.println();
-		System.out.println("Number of Topics = " + topics);
-		System.out.println("LogLikelihood    = " + llh);
-		System.out.println("Max llh correspond with topic number " + maxT);
-	}
-
-	public static void train(String inputFile, Integer numberOfTopics, Integer iterations) throws IOException {
-
+	public static void train(String inputFile, Integer numberOfTopics, Integer iterations, String pathOutput,
+			String language) throws IOException {
 		// Begin by importing documents from text to feature sequences
+
+		// Files which contains the model binaries
+		String lemmaBin = Utils.LemmaSelector(language);
+		String modelBin = Utils.modelSelector(language);
+
+		String pathOutputFinal = pathOutput;
+		String pathJarModelsFinal = Constants.pathToLemmaModels;
+		String stopwords = Utils.stopWordsSelector(language);
+
+		createModels(pathJarModelsFinal + language, modelBin, pathOutputFinal + language, lemmaBin);
+
 		ArrayList<Pipe> pipeList = new ArrayList<Pipe>();
 
 		_log.debug("Preparing pipes");
-		// Pipes: lemmatizer, tokenize, remove stopwords, map to features
+		// Pipes: LemmatizerPipe, tokenize, remove stopwords, map to features
 
-		// The lemmatizer takes the lemma of the words, and only passes the nouns and
-		// the adjetives
-		pipeList.add(new LemmatizerPipe());
+		// Put everything in lowercase, lemmatize the words and catch the nouns and
+		// adjetives
+		pipeList.add(new LemmatizerPipe(pathOutputFinal, language, modelBin, lemmaBin));
 
 		pipeList.add(new CharSequence2TokenSequence(Pattern.compile("\\p{L}[\\p{L}\\p{P}]+\\p{L}")));
-		pipeList.add(new TokenSequenceRemoveStopwords(new File("./stoplists/es.txt"), "UTF-8", false, false,
-				false)); /** STOPWORDS */
+		pipeList.add(
+				new TokenSequenceRemoveStopwords(new File(stopwords), "UTF-8", false, false, false)); /** STOPWORDS */
 		pipeList.add(new TokenSequence2FeatureSequence());
 
 		InstanceList instances = new InstanceList(new SerialPipes(pipeList));
@@ -90,8 +72,9 @@ public class TrainModel {
 		instances
 				.addThruPipe(new CsvIterator(fileReader, Pattern.compile("^(\\S*)[\\s,]*(\\S*)[\\s,]*(.*)$"), 3, 2, 1)); // data,
 																															// label,
-																															// name
-																															// fields
+
+		// name
+		// fields
 
 		_log.debug("Creating model");
 		// Create a model with default alpha and beta, they will be optimized
@@ -118,33 +101,59 @@ public class TrainModel {
 		System.out.println("LogLikelihood    = " + llh);
 	}
 
+	// Method to create (or not) the binaries that needs the LemmatizerPipe
+	public static void createModels(String pathJarModelsFinal, String modelBin, String pathOutput, String lemmaBin) {
+		File fileModel = new File(pathOutput + modelBin);
+		File fileLemmas = new File(pathOutput + lemmaBin);
+
+		if (!fileModel.exists()) {
+			try {
+				InputStream inputModelStream = TrainModel.class.getResourceAsStream(pathJarModelsFinal + modelBin);
+				FileUtils.copyInputStreamToFile(inputModelStream, fileModel);
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+		}
+
+		if (!fileLemmas.exists()) {
+			try {
+				InputStream inputLemmassStream = TrainModel.class.getResourceAsStream(pathJarModelsFinal + lemmaBin);
+				FileUtils.copyInputStreamToFile(inputLemmassStream, fileLemmas);
+			} catch (IOException e) {
+				// TODO Auto-generated catch block
+				e.printStackTrace();
+			}
+		}
+	}
+
 	public static void saveModel(Integer numTopics, Integer numIterations) throws Exception {
 
 		isModelInitialized();
 
 		LocalDateTime now = LocalDateTime.now();
 		DateTimeFormatter dtf = DateTimeFormatter.ofPattern("yyyy-MM-dd--HH:mm");
-		String file = String.format("LDA--topics-%s--iter-%s--%s", numTopics, numIterations, dtf.format(now));
-		
-		File directorio = new File(String.format("./models/LDA--topics-%s--iter-%s--llh-%s--%s", numTopics, numIterations,
-				model.modelLogLikelihood(), dtf.format(now)));
+		File directorio = new File(String.format("./models/LDA--topics-%s--iter-%s--llh-%s--%s", numTopics,
+				numIterations, model.modelLogLikelihood(), dtf.format(now)));
 		try {
 			File models = new File("./models");
 			if (!models.exists()) {
 				models.mkdir();
 			}
 			directorio.mkdir();
-			// printTopWords creates an .txt with the most relevant words per topic
-			Integer wordsPerTopicToPrint = 5;
+			// printTopWords crea
+			// printTopWords crea un .txt con las palabras más relevantes por topic
+			Integer wordsPerTopicToPrint = Constants.RETURN_WORDS_PER_TOPIC;
 			model.printTopWords(new File(directorio + "/topWords.txt"), wordsPerTopicToPrint, false);
-			// This two steps are needed to save correctly the train model and generate two
-			// files which will be loaded
-			// when you want to use this model
+
+			// Estos dos pasos son los necesarios para guardar correctamente el
+			// entrenamiento y genera dos ficheros que se tendrán que cargar cuando se
+			// quiera utilizar este model ya entrenado.
 			model.write(new File(directorio + "/model.dat"));
 			modelInstances.save(new File(directorio + "/instances.dat"));
 
 		} catch (IOException e) {
-			_log.error(String.format("Error saving model state on %s", file));
+			_log.error(String.format("Error saving model state on %s", directorio));
 			throw e;
 		}
 	}
@@ -154,7 +163,7 @@ public class TrainModel {
 		File directoryPath = new File(modelsDirectory);
 		FilenameFilter modelFilter = new FilenameFilter() {
 			public boolean accept(File dir, String name) {
-				if (name.startsWith("LDA--") && name.endsWith("--model.dat")) {
+				if (name.endsWith("model.dat")) {
 					return true;
 				} else {
 					return false;
@@ -188,13 +197,5 @@ public class TrainModel {
 		}
 	}
 
-	public static void main(String[] args) throws Exception {
-		TrainModel LDA = new TrainModel();
-		String malletTrainingFile = malletFile;
-
-		train(malletTrainingFile, numTopics, numIterations);
-		saveModel(numTopics, numIterations);
-
-	}
 
 }

@@ -1,3 +1,5 @@
-/home/usuario/eclipse-workspace/lda/src/main/java/net/zylk/microproductos/categorizador/textExtractor/TextExtractor.java
-/home/usuario/eclipse-workspace/lda/src/main/java/net/zylk/microproductos/categorizador/TrainModel.java
-/home/usuario/eclipse-workspace/lda/src/main/java/net/zylk/microproductos/categorizador/model/LemmatizerPipe.java
+/home/usuario/git-repo/lda-text-categorizer/src/main/java/net/zylk/microproductos/categorizador/TrainModel.java
+/home/usuario/git-repo/lda-text-categorizer/src/main/java/net/zylk/microproductos/categorizador/model/LemmatizerPipe.java
+/home/usuario/git-repo/lda-text-categorizer/src/main/java/net/zylk/microproductos/categorizador/textExtractor/TextExtractor.java
+/home/usuario/git-repo/lda-text-categorizer/src/main/java/net/zylk/microproductos/categorizador/utils/Utils.java
+/home/usuario/git-repo/lda-text-categorizer/src/main/java/net/zylk/microproductos/categorizador/utils/Constants.java

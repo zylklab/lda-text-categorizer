@@ -1,6 +1,6 @@
 # Categorizer
 
-Éste es un categorizador basado en el método [Asignación Latente de Dirichlet](https://en.wikipedia.org/wiki/Latent_Dirichlet_allocation) (LDA por sus siglas en inglés), donde un texto se categoriza de acuerdo a unas agrupaciones de palabras o topics que proporciona un modelo preentrenado. Éste modelo se obtiene a través de la extracción del texto de las entradas de distintos blogs, de forma que se sacan los topics de todos los blogs que introduzcamos. 
+Éste es un categorizador basado en el método [Asignación Latente de Dirichlet](https://en.wikipedia.org/wiki/Latent_Dirichlet_allocation) (LDA por sus siglas en inglés), donde un texto se categoriza de acuerdo a unas agrupaciones de palabras o topics que proporciona un modelo preentrenado. Éste modelo se obtiene a través de la extracción del texto de las entradas de distintos blogs, de forma que se sacan los topics de todos los blogs que introduzcamos.
 
 Para crear el categorizador, se han utilizado las siguientes librerías Open Source:
 + [LDA mallet](http://mallet.cs.umass.edu/)
@@ -14,7 +14,7 @@ A continuación se explica cómo se entrena el modelo desde 0:
 
 ### Extracción de los textos
 
-Para extraer los textos de los distintos blogs, se utiliza la clase `TextExtractor`. Lo primero de todo y muy a tener en cuenta es que es muy probable que para cada blog se necesite una configuración totalmente distinta, impidiendo realizar un extractor genérico para todos. 
+Para extraer los textos de los distintos blogs, se utiliza la clase `TextExtractor`. Lo primero de todo y muy a tener en cuenta es que es muy probable que para cada blog se necesite una configuración totalmente distinta, impidiendo realizar un extractor genérico para todos.
 
 La obtención de los textos es un procedimiento reiterativo, hay que realizar varias pruebas hasta que se leen únicamente los textos que sean de interés, evitando entrar en las URL de páginas no deseadas, como pueden ser redes sociales o cualquier otro tipo de página. Primero se inspecciona las páginas de los blogs y se obtienen todas las URL de las mismas, pasando después a entrar a las URL que sean de interés y de las cuales sólo va a obtener el texto.
 
@@ -25,7 +25,7 @@ A continuación se detallan los pasos a seguir, primero se obtienen las URL que 
 1. Obtención de la URL base, que corresponde al elemento `url`. Ésta URL es la dirección que sigue la paginación de los blogs. Para su obtención, se pasa a la segunda página del blog y se introduce en `url` sustituyendo el `2` por `%s`. La razón de esto es que de manera general, la URL de la primera página del blog es diferente al resto, siendo necesario pasar a la página siguiente.
 1. Como al principio se está haciendo una prueba, se define el número máximo de páginas del blog de las que va a leer la URL `maxPages`, que no debe ser grande, por lo que leyendo 3 o 4 páginas es suficiente.
 1. Ahora se lee el formato de las URL de las entradas, entrando a unas pocas entradas del blog y cogiendo la parte el principio de la URL que sea común a todas, que se le asigna a `my_site`.
-1. Una vez hecho todo esto, iniciamos el extractor de texto, visualizando por pantalla las URL de las que se obtendría el texto. Lo más seguro es que la gran mayoría de las URL que muestre no pertenezcan a entradas del blog, por lo que hay que añadir excepciones. Hay diversas formas, dependiendo de la distribución del blog: 
+1. Una vez hecho todo esto, iniciamos el extractor de texto, visualizando por pantalla las URL de las que se obtendría el texto. Lo más seguro es que la gran mayoría de las URL que muestre no pertenezcan a entradas del blog, por lo que hay que añadir excepciones. Hay diversas formas, dependiendo de la distribución del blog:
     1. Si son URL únicas que se repiten en todas las páginas y que cumplen todos los requisitos, pero no se quiere entrar en ellas, se introducen en el array `not_sites`.
     1. Hay veces que las páginas contienen directorios que cumplen las condiciones de los posts, pero que no lo son. Éstos directorios tienen una parte de la URL que hace referencia a ellos, por lo que se deben añadir excepciones incluyendo ésta parte de la URL de la siguiente forma `!link.contains("excepción")` en el mismo lugar donde se comprueba el formato de la URL, si se ha entrado ya en la misma o si es una de las URL que componen las `not_sites`.
     1. Hay que realizar estos pasos iterativamente hasta que se consiga finalmente que imprima por pantalla únicamente las URL de los posts.
@@ -45,15 +45,27 @@ Tras realizar la extracción del texto de varios blogs, se unen todos en un mism
 + Francés (fr)
 + Gallego (gl)
 + Flamenco (nl)
++ Italiano (it)
 
 La clase se encarga automáticamente de preprocesar el contenido del fichero mallet:
 1. Se pone todo en mayúsculas
 1. Se lematiza se eliminan todas las palabras que no sean o bien nombres o adjetivos
 1. Se elimina cualquier caracter que no sea del alfabeto.
-1. Se pasa por un filtrado en la que se eliminan las stopwords
+1. Se pasa por un filtrado en la que se eliminan las stopwords (obtenidos de la colección [Stopwords ISO](https://github.com/stopwords-iso))
 1. Finalmente asigna un vector al texto.
 
-Tanto el idioma en el que se van a introducir los textos como los modelos para lematizarles, se encuentran en la carpeta `src/main/resources/Lemma_models`, por lo que hay que asignar los valores que correspondan en la clase `LemmatizerPipe`. Éstos modelos se encargarán de realizar el lematizado de las palabras, así como de definir qué tipo de palabras son. Se han cogido de la librería [ixa-pipe-pos](https://github.com/ixa-ehu/ixa-pipe-pos).
+Para entrenar el modelo, en la clase `net.zylk.microproductos.categorizador.Model` se utilizan los métodos `train` y `saveModel`a los cuales se le indica lo siguiente:
++ `train(inputFile, numberOfTopics, iterations, pathOutput, language);`
+  - `malletTrainingFile`: Ruta al archivo que contiene los textos para entrenar el modelo.
+  - `numberOfTopics`: Número de topics que se desea obtener.
+  - `iterations`: Número de iteraciones que debe realizar el modelo.
+  - `pathOutput`: Ruta donde se quieren guardar los archivos para realizar el lematizado y POS de las palabras (se recomienda guardarlos en `/tmp/`).
+  - `language`: Lenguaje de los textos.
++ `saveModel(numTopics, iterations)`:
+  - `numTopics`: mismo valor que para el método `train`.
+  - `iterations`: mismo valor que para el método `train`.
+
+Se han cogido de la librería [ixa-pipe-pos](https://github.com/ixa-ehu/ixa-pipe-pos).
 
 Tras éste preprocesado, el modelo de entrenamiento ya está en condiciones de poder entrenar con el modelo LDA. Tras entrenar el modelo, proporciona:
 1. Un archivo "topWords.txt", que contiene los topics y sus palabras más representativas. Hay que visualizarlo para comprobar que no haya topics demasiado parecidos.
