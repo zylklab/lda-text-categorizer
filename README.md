@@ -65,8 +65,6 @@ Para entrenar el modelo, en la clase `net.zylk.microproductos.categorizador.Mode
   - `numTopics`: mismo valor que para el método `train`.
   - `iterations`: mismo valor que para el método `train`.
 
-Se han cogido de la librería [ixa-pipe-pos](https://github.com/ixa-ehu/ixa-pipe-pos).
-
 Tras éste preprocesado, el modelo de entrenamiento ya está en condiciones de poder entrenar con el modelo LDA. Tras entrenar el modelo, proporciona:
 1. Un archivo "topWords.txt", que contiene los topics y sus palabras más representativas. Hay que visualizarlo para comprobar que no haya topics demasiado parecidos.
 1. Dos archivos: "model.data" e "instances.dat", que contienen el modelo ya entrenado.
